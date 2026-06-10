@@ -6,10 +6,28 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.get('/api/turn-credentials', (req, res) => {
+app.get('/api/ice-servers', async (req, res) => {
+  const appName = process.env.METERED_APP_NAME;
+  const apiKey  = process.env.METERED_API_KEY;
+
+  if (appName && apiKey) {
+    try {
+      const meteredRes = await fetch(
+        `https://${appName}.metered.ca/api/v1/turn/credentials?apiKey=${apiKey}`
+      );
+      const iceServers = await meteredRes.json();
+      return res.json({ iceServers });
+    } catch (err) {
+      console.error('Metered TURN fetch failed, falling back to STUN:', err.message);
+    }
+  }
+
+  // Fallback: public STUN only (no relay — may fail on strict NAT/mobile)
   res.json({
-    sid: process.env.TWILIO_SID || 'fallback-sid',
-    token: process.env.TWILIO_TOKEN || 'fallback-token'
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
   });
 });
 

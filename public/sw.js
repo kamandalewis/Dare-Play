@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dareordie-v2.1'; 
+const CACHE_NAME = 'dare-play-v2';
 const ASSETS = [
   '/',
   '/index.html',

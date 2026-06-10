@@ -1,9 +1,5 @@
 const socket = io();
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed', err));
-}
-
 // ---------- DOM elements ----------
 const lobbyScreen = document.getElementById('lobbyScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -81,7 +77,7 @@ function showUpdateToast() {
   document.body.appendChild(toast);
 }
 // ---------- State ----------
-let twilioCredentials = null;
+let iceServersCache = null;
 let playerName = '';
 let localStream = null;
 let peer = null;
@@ -158,7 +154,7 @@ function enterGame(roomId) {
   if (oldOverlay) oldOverlay.remove();
   try { screen.orientation.lock('portrait').catch(() => {}); } catch (e) {}
 startLocalStream().then(() => {
-  fetchTurnCredentials().then(() => createPeer());
+  fetchIceServers().then(() => createPeer());
 });
 }
 
@@ -181,32 +177,19 @@ async function startLocalStream() {
   }
 }
 
-async function fetchTurnCredentials() {
-  if (twilioCredentials) return twilioCredentials;
-  const res = await fetch('/api/turn-credentials');
-  twilioCredentials = await res.json();
-  return twilioCredentials;
+async function fetchIceServers() {
+  if (iceServersCache) return iceServersCache;
+  const res = await fetch('/api/ice-servers');
+  const data = await res.json();
+  iceServersCache = data.iceServers;
+  return iceServersCache;
 }
 
 async function createPeer() {
-  // Fetch credentials from server (only once)
-  const creds = await fetchTurnCredentials();
+  const iceServers = await fetchIceServers();
 
   peer = new Peer(undefined, {
-    config: {
-      iceServers: [
-        {
-          urls: "turn:global.turn.twilio.com:3478?transport=udp",
-          username: creds.sid,
-          credential: creds.token
-        },
-        {
-          urls: "turn:global.turn.twilio.com:3478?transport=tcp",
-          username: creds.sid,
-          credential: creds.token
-        }
-      ]
-    }
+    config: { iceServers }
   });
 
   peer.on('open', (peerId) => {
@@ -492,7 +475,7 @@ const shareRoomBtn = document.getElementById('shareRoomBtn');
 shareRoomBtn.addEventListener('click', () => {
   if (!currentRoom) return;
   const shareData = {
-    title: 'Play-Dare – join my room!',
+    title: 'Dare Play – join my room!',
     text: `Room code: ${currentRoom}`,
     url: window.location.origin + '?room=' + currentRoom
   };
