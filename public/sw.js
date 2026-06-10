@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dare-play-v2';
+const CACHE_NAME = 'dare-play-v3';
 const ASSETS = [
   '/',
   '/index.html',

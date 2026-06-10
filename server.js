@@ -7,13 +7,12 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.get('/api/ice-servers', async (req, res) => {
-  const appName = process.env.METERED_APP_NAME;
   const apiKey  = process.env.METERED_API_KEY;
 
-  if (appName && apiKey) {
+  if (apiKey) {
     try {
       const meteredRes = await fetch(
-        `https://${appName}.metered.ca/api/v1/turn/credentials?apiKey=${apiKey}`
+        `https://dareplay2.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`
       );
       const iceServers = await meteredRes.json();
       return res.json({ iceServers });
@@ -22,7 +21,6 @@ app.get('/api/ice-servers', async (req, res) => {
     }
   }
 
-  // Fallback: public STUN only (no relay — may fail on strict NAT/mobile)
   res.json({
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
